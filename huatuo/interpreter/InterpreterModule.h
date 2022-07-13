@@ -26,6 +26,7 @@ namespace interpreter
 		static Il2CppMethodPointer GetMethodPointer(const MethodInfo* method);
 		static Il2CppMethodPointer GetAdjustThunkMethodPointer(const Il2CppMethodDefinition* method);
 		static Il2CppMethodPointer GetAdjustThunkMethodPointer(const MethodInfo* method);
+		static Il2CppMethodPointer GetStaticAdjustThunkMethodPointer(const MethodInfo* method);
 		static Managed2NativeCallMethod GetManaged2NativeMethodPointer(const MethodInfo* method, bool forceStatic);
 		static Managed2NativeCallMethod GetManaged2NativeMethodPointer(const metadata::ResolveStandAloneMethodSig& methodSig);
 

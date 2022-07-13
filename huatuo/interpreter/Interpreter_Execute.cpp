@@ -5502,8 +5502,14 @@ else \
 					Il2CppClass* __klass = ((Il2CppClass*)imi->resolveDatas[*(uint32_t*)(ip + 8)]);
 					uint16_t __obj = *(uint16_t*)(ip + 4);
 					uint16_t __method = *(uint16_t*)(ip + 6);
+					const MethodInfo* __mdinfo = (*(MethodInfo**)(localVarBase + __method));
 				    Il2CppDelegate* del = (Il2CppDelegate*)il2cpp::vm::Object::New(__klass);
-				    ConstructDelegate(del, (*(Il2CppObject**)(localVarBase + __obj)), (*(MethodInfo**)(localVarBase + __method)));
+				    ConstructDelegate(del, (*(Il2CppObject**)(localVarBase + __obj)), __mdinfo);
+					if (__mdinfo->flags & METHOD_ATTRIBUTE_STATIC)
+					{
+						Il2CppMethodPointer adjusterMethod = huatuo::interpreter::InterpreterModule::GetStaticAdjustThunkMethodPointer(__mdinfo);
+						del->invoke_impl = adjusterMethod;//invoke_impl只在AOT中使用，Interp不使用此值，所以只需要考虑AOT的正确性即可。
+					}
 				    (*(Il2CppObject**)(localVarBase + __dst)) = (Il2CppObject*)del;
 				    ip += 16;
 				    continue;

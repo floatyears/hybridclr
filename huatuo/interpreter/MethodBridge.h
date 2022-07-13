@@ -18,6 +18,7 @@ namespace interpreter
 		Il2CppMethodPointer method;
 		Il2CppMethodPointer adjustThunkMethod;
 		Managed2NativeCallMethod managed2NativeMethod;
+		Il2CppMethodPointer statciAdjustThunkMethod;
 	};
 
 	struct NativeInvokeMethod

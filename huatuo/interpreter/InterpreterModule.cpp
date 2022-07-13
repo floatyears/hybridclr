@@ -153,6 +153,18 @@ namespace interpreter
 		return (Il2CppMethodPointer)NotSupportNative2Managed;
 	}
 
+	Il2CppMethodPointer InterpreterModule::GetStaticAdjustThunkMethodPointer(const MethodInfo* method)
+	{
+		const NativeCallMethod* ncm = GetNativeCallMethod(method, true);
+		if (ncm)
+		{
+			return ncm->statciAdjustThunkMethod;
+		}
+		//RaiseMethodNotSupportException(method, "GetMethodPointer");
+		return (Il2CppMethodPointer)NotSupportNative2Managed;
+	}
+
+
 	Managed2NativeCallMethod InterpreterModule::GetManaged2NativeMethodPointer(const MethodInfo* method, bool forceStatic)
 	{
 		const NativeCallMethod* ncm = GetNativeCallMethod(method, forceStatic);
