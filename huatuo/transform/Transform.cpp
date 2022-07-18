@@ -1400,9 +1400,9 @@ namespace transform
 		{
 			IL2CPP_ASSERT(evalStackTop > 0);
 			EvalStackVarInfo& top = evalStack[evalStackTop - 1];
-			if (top.reduceType != dstReduceType)
+			//if (top.reduceType != dstReduceType)
 			{
-				CreateIR(ir, ConvertVarVar_i1_i1);
+				CreateIR(ir, ConvertVarVar_i4_u4);
 				ir->type = (HiOpcodeEnum)0;
 				ir->dst = ir->src = GetEvalStackTopOffset();
 				switch (top.reduceType)
@@ -1448,9 +1448,9 @@ namespace transform
 		{
 			IL2CPP_ASSERT(evalStackTop > 0);
 			EvalStackVarInfo& top = evalStack[evalStackTop - 1];
-			if (top.reduceType != dstReduceType)
+			//if (top.reduceType != dstReduceType)
 			{
-				CreateIR(ir, ConvertOverflowVarVar_i1_i1);
+				CreateIR(ir, ConvertOverflowVarVar_i4_u4);
 				ir->type = (HiOpcodeEnum)0;
 				ir->dst = ir->src = GetEvalStackTopOffset();
 				switch (top.reduceType)
@@ -1829,6 +1829,79 @@ namespace transform
 			ip++;
 		}
 
+
+		bool FindFirstLeaveHandlerIndex(const std::vector<ExceptionClause>& exceptionClauses, uint32_t leaveOffset, uint32_t targetOffset, uint16_t& index)
+		{
+			index = 0;
+			for (const ExceptionClause& ec : exceptionClauses)
+			{
+				if (ec.flags == CorILExceptionClauseType::Finally)
+				{
+					if (ec.tryOffset <= leaveOffset && leaveOffset < ec.tryOffset + ec.tryLength)
+						return !(ec.tryOffset <= targetOffset && targetOffset < ec.tryOffset + ec.tryLength);
+				}
+				++index;
+			}
+			return false;
+		}
+
+		bool IsLeaveInTryBlock(const std::vector<ExceptionClause>& exceptionClauses, uint32_t leaveOffset)
+		{
+			for (const ExceptionClause& ec : exceptionClauses)
+			{
+				if (ec.tryOffset <= leaveOffset && leaveOffset < ec.tryOffset + ec.tryLength)
+				{
+					return true;
+				}
+				if (ec.handlerOffsets <= leaveOffset && leaveOffset < ec.handlerLength + ec.handlerLength)
+				{
+					return false;
+				}
+			}
+			return false;
+		}
+
+		void Add_leave(uint32_t targetOffset)
+		{
+			uint32_t leaveOffset = (uint32_t)(ip - ipBase);
+			uint16_t firstHandlerIndex;
+			if (FindFirstLeaveHandlerIndex(body.exceptionClauses, leaveOffset, targetOffset, firstHandlerIndex))
+			{
+				CreateAddIR(ir, LeaveEx);
+				ir->target = targetOffset;
+				ir->firstHandlerIndex = firstHandlerIndex;
+				PushOffset(&ir->target);
+			}
+			else if (!IsLeaveInTryBlock(body.exceptionClauses, leaveOffset))
+			{
+				CreateAddIR(ir, LeaveEx_Directly);
+				ir->target = targetOffset;
+				PushOffset(&ir->target);
+			}
+			else
+			{
+				CreateAddIR(ir, BranchUncondition_4);
+				ir->offset = targetOffset;
+				PushOffset(&ir->offset);
+			}
+			PopAllStack();
+			PushBranch(targetOffset);
+		}
+
+		uint16_t FindFirstThrowHandlerIndex(const std::vector<ExceptionClause>& exceptionClauses, uint32_t throwOffset)
+		{
+			uint16_t index = 0;
+			for (const ExceptionClause& ec : exceptionClauses)
+			{
+				if (ec.flags == CorILExceptionClauseType::Finally)
+				{
+					if (ec.tryOffset <= throwOffset && throwOffset < ec.tryOffset + ec.tryLength)
+						return index;
+				}
+				++index;
+			}
+			return index;
+		}
 	};
 
 #pragma region conv
@@ -2156,7 +2229,7 @@ else \
 			}
 			default:
 			{
-				IL2CPP_ASSERT(false);
+				RaiseHuatuoExecutionEngineException("");
 			}
 			}
 			result.exClauses.push_back(iec);
@@ -3160,11 +3233,7 @@ else \
 			{
 				brOffset = GetI1(ip + 1);
 				int32_t targetOffset = ipOffset + brOffset + 2;
-				CreateAddIR(ir, LeaveEx);
-				ir->offset = targetOffset;
-				ctx.PushOffset(&ir->offset);
-				ctx.PopAllStack();
-				ctx.PushBranch(targetOffset);
+				ctx.Add_leave((uint32_t)targetOffset);
 				PopBranch();
 				continue;
 			}
@@ -3259,11 +3328,7 @@ else \
 			{
 				brOffset = GetI4LittleEndian(ip + 1);
 				int32_t targetOffset = ipOffset + brOffset + 5;
-				CreateAddIR(ir, LeaveEx);
-				ir->offset = targetOffset;
-				ctx.PushOffset(&ir->offset);
-				ctx.PopAllStack();
-				ctx.PushBranch(targetOffset);
+				ctx.Add_leave((uint32_t)targetOffset);
 				PopBranch();
 				continue;
 			}
@@ -3574,7 +3639,7 @@ else \
 				}
 				default:
 				{
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("NEG not suppport type");
 					break;
 				}
 				}
@@ -3602,7 +3667,7 @@ else \
 				}
 				default:
 				{
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("NOT not suppport type");
 					break;
 				}
 				}
@@ -4031,7 +4096,7 @@ else \
 				}
 				default:
 				{
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("");
 					break;
 				}
 				}
@@ -4064,6 +4129,7 @@ else \
 				IL2CPP_ASSERT(evalStackTop > 0);
 				CreateAddIR(ir, ThrowEx);
 				ir->exceptionObj = ctx.GetEvalStackTopOffset();
+				ir->firstHandlerIndex = ctx.FindFirstThrowHandlerIndex(body.exceptionClauses, ipOffset);
 				ctx.PopAllStack();
 				PopBranch();
 				continue;
@@ -4436,7 +4502,7 @@ else \
 				}
 				default:
 				{
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("ldelema");
 					break;
 				}
 				}
@@ -4516,7 +4582,7 @@ else \
 #else
 				CI_stele(i4)
 #endif
-					continue;
+				continue;
 			}
 			case OpcodeValue::STELEM_I1:
 			{
@@ -4574,95 +4640,55 @@ ir->dst = arr.locOffset;
 
 				IL2CPP_ASSERT(index.reduceType == EvalStackReduceDataType::I4 || index.reduceType == EvalStackReduceDataType::I8);
 				bool isIndexInt32Type = index.reduceType == EvalStackReduceDataType::I4;
-			LdelemRetry:
-				switch (eleType->type)
+				LocationDescInfo desc = ComputLocationDescInfo(eleType);
+				switch (desc.type)
 				{
-				case IL2CPP_TYPE_BOOLEAN: { CI_ldele0(i1, I4); break; }
-				case IL2CPP_TYPE_CHAR: { CI_ldele0(u2, I4); break; }
-				case IL2CPP_TYPE_I1: { CI_ldele0(i1, I4); break; }
-				case IL2CPP_TYPE_U1: { CI_ldele0(u1, I4); break; }
-				case IL2CPP_TYPE_I2: { CI_ldele0(i2, I4); break; }
-				case IL2CPP_TYPE_U2: { CI_ldele0(u2, I4); break; }
-				case IL2CPP_TYPE_I4: { CI_ldele0(i4, I4); break; }
-				case IL2CPP_TYPE_U4: { CI_ldele0(u4, I4); break; }
-				case IL2CPP_TYPE_I8: { CI_ldele0(i8, I8); break; }
-				case IL2CPP_TYPE_U8: { CI_ldele0(u8, I8); break; }
-				case IL2CPP_TYPE_R4: { CI_ldele0(i4, R4); break; }
-				case IL2CPP_TYPE_R8:
-				case IL2CPP_TYPE_I:
-				case IL2CPP_TYPE_U: { CI_ldele0(i8, I8); break; }
-				case IL2CPP_TYPE_FNPTR:
-				case IL2CPP_TYPE_PTR:
-				case IL2CPP_TYPE_BYREF: { CI_ldele0(i8, I); break; }
-				default:
+				case LocationDescType::I1: { CI_ldele0(i1, I4); break; }
+				case LocationDescType::U1: { CI_ldele0(u1, I4); break; }
+				case LocationDescType::I2: { CI_ldele0(i2, I4); break; }
+				case LocationDescType::U2: { CI_ldele0(u2, I4); break; }
+				case LocationDescType::I4: { CI_ldele0(i4, I4); break; }
+				case LocationDescType::I8: { CI_ldele0(i8, I8); break; }
+				case LocationDescType::S:
 				{
-					if (IS_CLASS_VALUE_TYPE(objKlass))
+					uint32_t size = il2cpp::vm::Class::GetValueSize(objKlass, nullptr);
+					switch (size)
 					{
-						if (objKlass->enumtype)
-						{
-							eleType = &objKlass->element_class->byval_arg;
-							goto LdelemRetry;
-						}
-						uint32_t size = il2cpp::vm::Class::GetValueSize(objKlass, nullptr);
-						switch (size)
-						{
-						case 1:
-						{
-							CI_ldele0(u1, Other);
-							break;
-						}
-						case 2:
-						{
-							CI_ldele0(u2, Other)
-								break;
-						}
-						case 4:
-						{
-							CI_ldele0(u4, Other)
-								break;
-						}
-						case 8:
-						{
-							CI_ldele0(u8, Other)
-								break;
-						}
-						case 12:
-						{
-							CreateAddIR(ir, GetArrayElementVarVar_size_12_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_size_12_4 : HiOpcodeEnum::GetArrayElementVarVar_size_12_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->dst = arr.locOffset;
-							break;
-						}
-						case 16:
-						{
-							CreateAddIR(ir, GetArrayElementVarVar_size_16_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_size_16_4 : HiOpcodeEnum::GetArrayElementVarVar_size_16_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->dst = arr.locOffset;
-							break;
-						}
-						default:
-						{
-							CreateAddIR(ir, GetArrayElementVarVar_n_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_n_4 : HiOpcodeEnum::GetArrayElementVarVar_n_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->dst = arr.locOffset;
-							break;
-						}
-						}
+					case 12:
+					{
+						CreateAddIR(ir, GetArrayElementVarVar_size_12_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_size_12_4 : HiOpcodeEnum::GetArrayElementVarVar_size_12_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->dst = arr.locOffset;
+						break;
 					}
-					else
+					case 16:
 					{
-						CI_ldele0(i8, Ref);
+						CreateAddIR(ir, GetArrayElementVarVar_size_16_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_size_16_4 : HiOpcodeEnum::GetArrayElementVarVar_size_16_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->dst = arr.locOffset;
+						break;
+					}
+					default:
+					{
+						CreateAddIR(ir, GetArrayElementVarVar_n_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::GetArrayElementVarVar_n_4 : HiOpcodeEnum::GetArrayElementVarVar_n_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->dst = arr.locOffset;
+						break;
+					}
 					}
 					break;
 				}
+				default:
+				{
+					RaiseHuatuoExecutionEngineException("ldelem not support type");
+				}					 
 				}
-
 				ctx.PopStackN(2);
 				ctx.PushStackByType(eleType);
 
@@ -4691,95 +4717,55 @@ ir->ele = ele.locOffset;
 
 				IL2CPP_ASSERT(index.reduceType == EvalStackReduceDataType::I4 || index.reduceType == EvalStackReduceDataType::I8);
 				bool isIndexInt32Type = index.reduceType == EvalStackReduceDataType::I4;
-			StelemRetry:
-				switch (eleType->type)
+				LocationDescInfo desc = ComputLocationDescInfo(eleType);
+				switch (desc.type)
 				{
-				case IL2CPP_TYPE_BOOLEAN: { CI_stele0(i1); break; }
-				case IL2CPP_TYPE_CHAR: { CI_stele0(u2); break; }
-				case IL2CPP_TYPE_I1: { CI_stele0(i1); break; }
-				case IL2CPP_TYPE_U1: { CI_stele0(u1); break; }
-				case IL2CPP_TYPE_I2: { CI_stele0(i2); break; }
-				case IL2CPP_TYPE_U2: { CI_stele0(u2); break; }
-				case IL2CPP_TYPE_I4: { CI_stele0(i4); break; }
-				case IL2CPP_TYPE_U4: { CI_stele0(u4); break; }
-				case IL2CPP_TYPE_I8: { CI_stele0(i8); break; }
-				case IL2CPP_TYPE_U8: { CI_stele0(u8); break; }
-				case IL2CPP_TYPE_R4: { CI_stele0(i4); break; }
-				case IL2CPP_TYPE_R8:
-				case IL2CPP_TYPE_I:
-				case IL2CPP_TYPE_U: { CI_stele0(i8); break; }
-				case IL2CPP_TYPE_FNPTR:
-				case IL2CPP_TYPE_PTR:
-				case IL2CPP_TYPE_BYREF: { CI_stele0(i8); break; }
-				default:
+				case LocationDescType::I1: { CI_stele0(i1); break; }
+				case LocationDescType::U1: { CI_stele0(u1); break; }
+				case LocationDescType::I2: { CI_stele0(i2); break; }
+				case LocationDescType::U2: { CI_stele0(u2); break; }
+				case LocationDescType::I4: { CI_stele0(i4); break; }
+				case LocationDescType::I8: { CI_stele0(i8); break; }
+				case LocationDescType::S:
 				{
-					if (IS_CLASS_VALUE_TYPE(objKlass))
+					uint32_t size = il2cpp::vm::Class::GetValueSize(objKlass, nullptr);
+					switch (size)
 					{
-						if (objKlass->enumtype)
-						{
-							eleType = &objKlass->element_class->byval_arg;
-							goto StelemRetry;
-						}
-						uint32_t size = il2cpp::vm::Class::GetValueSize(objKlass, nullptr);
-						switch (size)
-						{
-						case 1:
-						{
-							CI_stele0(u1);
-							break;
-						}
-						case 2:
-						{
-							CI_stele0(u2);
-							break;
-						}
-						case 4:
-						{
-							CI_stele0(u4);
-							break;
-						}
-						case 8:
-						{
-							CI_stele0(u8);
-							break;
-						}
-						case 12:
-						{
-							CreateAddIR(ir, SetArrayElementVarVar_size_12_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_size_12_4 : HiOpcodeEnum::SetArrayElementVarVar_size_12_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->ele = ele.locOffset;
-							break;
-						}
-						case 16:
-						{
-							CreateAddIR(ir, SetArrayElementVarVar_size_16_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_size_16_4 : HiOpcodeEnum::SetArrayElementVarVar_size_16_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->ele = ele.locOffset;
-							break;
-						}
-						default:
-						{
-							CreateAddIR(ir, SetArrayElementVarVar_n_8);
-							ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_n_4 : HiOpcodeEnum::SetArrayElementVarVar_n_8;
-							ir->arr = arr.locOffset;
-							ir->index = index.locOffset;
-							ir->ele = ele.locOffset;
-							break;
-						}
-						}
+					case 12:
+					{
+						CreateAddIR(ir, SetArrayElementVarVar_size_12_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_size_12_4 : HiOpcodeEnum::SetArrayElementVarVar_size_12_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->ele = ele.locOffset;
+						break;
 					}
-					else
+					case 16:
 					{
-						CI_stele0(ref);
+						CreateAddIR(ir, SetArrayElementVarVar_size_16_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_size_16_4 : HiOpcodeEnum::SetArrayElementVarVar_size_16_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->ele = ele.locOffset;
+						break;
+					}
+					default:
+					{
+						CreateAddIR(ir, SetArrayElementVarVar_n_8);
+						ir->type = isIndexInt32Type ? HiOpcodeEnum::SetArrayElementVarVar_n_4 : HiOpcodeEnum::SetArrayElementVarVar_n_8;
+						ir->arr = arr.locOffset;
+						ir->index = index.locOffset;
+						ir->ele = ele.locOffset;
+						break;
+					}
 					}
 					break;
 				}
+				default:
+				{
+					RaiseHuatuoExecutionEngineException("stelem not support type");
 				}
-
+				}
 				ctx.PopStackN(3);
 
 				ip += 5;
@@ -5028,7 +5014,7 @@ ir->ele = ele.locOffset;
 
 				case OpcodeValue::ARGLIST:
 				{
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("");
 					ip += 2;
 					continue;
 				}

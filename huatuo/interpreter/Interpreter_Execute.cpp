@@ -400,33 +400,32 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		return ref.value;
 	}
 
-	inline Il2CppArray* NewMdArray(Il2CppClass* fullArrKlass, il2cpp_array_size_t* lengths, il2cpp_array_size_t* lowerBounds)
+#define MAX_DIMENSION  10
+
+	inline Il2CppArray* NewMdArray(Il2CppClass* fullArrKlass, StackObject* lengths, StackObject* lowerBounds)
 	{
+		il2cpp_array_size_t arrLengths[MAX_DIMENSION];
+		il2cpp_array_size_t arrLowerBounds[MAX_DIMENSION];
+
 		switch (fullArrKlass->rank)
 		{
 		case 1:
 		{
-			if (lengths)
-			{
-				lengths[0] = (int32_t)lengths[0];
-			}
+			arrLengths[0] = lengths[0].i32;
 			if (lowerBounds)
 			{
-				lowerBounds[0] = (int32_t)lowerBounds[0];
+				arrLowerBounds[0] = lowerBounds[0].i32;
 			}
 			break;
 		}
 		case 2:
 		{
-			if (lengths)
-			{
-				lengths[0] = (int32_t)lengths[0];
-				lengths[1] = (int32_t)lengths[1];
-			}
+			arrLengths[0] = lengths[0].i32;
+			arrLengths[1] = lengths[1].i32;
 			if (lowerBounds)
 			{
-				lowerBounds[0] = (int32_t)lowerBounds[0];
-				lowerBounds[1] = (int32_t)lowerBounds[1];
+				arrLowerBounds[0] = lowerBounds[0].i32;
+				arrLowerBounds[1] = lowerBounds[1].i32;
 			}
 			break;
 		}
@@ -434,23 +433,21 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		{
 			for (uint8_t i = 0; i < fullArrKlass->rank; i++)
 			{
-				if (lengths)
-				{
-					lengths[i] = (int32_t)lengths[i];
-				}
+				arrLengths[i] = lengths[i].i32;
 				if (lowerBounds)
 				{
-					lowerBounds[i] = (int32_t)lowerBounds[i];
+					arrLowerBounds[i] = lowerBounds[i].i32;
 				}
 			}
 			break;
 		}
 		}
-		return il2cpp::vm::Array::NewFull(fullArrKlass, lengths, lowerBounds);
+		return il2cpp::vm::Array::NewFull(fullArrKlass, arrLengths, lowerBounds ? arrLowerBounds : nullptr);
 	}
 
-	inline void* GetMdArrayElementAddress(Il2CppArray* arr, il2cpp_array_size_t* indexs)
+	inline void* GetMdArrayElementAddress(Il2CppArray* arr, StackObject* indexs)
 	{
+		CHECK_NOT_NULL_THROW(arr);
 		Il2CppClass* klass = arr->klass;
 		uint32_t eleSize = klass->element_size;
 		Il2CppArrayBounds* bounds = arr->bounds;
@@ -460,8 +457,8 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		case 1:
 		{
 			Il2CppArrayBounds& bound = bounds[0];
-			int32_t idx = (int32_t)indexs[0] - bound.lower_bound;
-			if (idx >= 0 && idx < bound.length)
+			il2cpp_array_size_t idx = (il2cpp_array_size_t)(indexs[0].i32 - bound.lower_bound);
+			if (idx < bound.length)
 			{
 				return arrayStart + (idx * eleSize);
 			}
@@ -474,10 +471,10 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		case 2:
 		{
 			Il2CppArrayBounds& bound0 = bounds[0];
-			int32_t idx0 = (int32_t)indexs[0] - bound0.lower_bound;
+			il2cpp_array_size_t idx0 = (il2cpp_array_size_t)(indexs[0].i32 - bound0.lower_bound);
 			Il2CppArrayBounds& bound1 = bounds[1];
-			int32_t idx1 = (int32_t)indexs[1] - bound1.lower_bound;
-			if (idx0 >= 0 && idx0 < bound0.length && idx1 >= 0 && idx1 < bound1.length)
+			il2cpp_array_size_t idx1 = (il2cpp_array_size_t)(indexs[1].i32 - bound1.lower_bound);
+			if (idx0 < bound0.length && idx1 < bound1.length)
 			{
 				return arrayStart + ((idx0 * bound1.length) + idx1) * eleSize;
 			}
@@ -490,12 +487,12 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		case 3:
 		{
 			Il2CppArrayBounds& bound0 = bounds[0];
-			int32_t idx0 = (int32_t)indexs[0] - bound0.lower_bound;
+			il2cpp_array_size_t idx0 = (il2cpp_array_size_t)(indexs[0].i32 - bound0.lower_bound);
 			Il2CppArrayBounds& bound1 = bounds[1];
-			int32_t idx1 = (int32_t)indexs[1] - bound1.lower_bound;
+			il2cpp_array_size_t idx1 = (il2cpp_array_size_t)(indexs[1].i32 - bound1.lower_bound);
 			Il2CppArrayBounds& bound2 = bounds[2];
-			int32_t idx2 = (int32_t)indexs[2] - bound2.lower_bound;
-			if (idx0 >= 0 && idx0 < bound0.length && idx1 >= 0 && idx1 < bound1.length && idx2 >= 0 && idx2 < bound2.length)
+			il2cpp_array_size_t idx2 = (il2cpp_array_size_t)(indexs[2].i32 - bound2.lower_bound);
+			if (idx0 < bound0.length && idx1 < bound1.length && idx2 < bound2.length)
 			{
 				return arrayStart + ((idx0 * bound1.length + idx1) * bound2.length + idx2) * eleSize;
 			}
@@ -512,8 +509,8 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 			for (uint8_t i = 0; i < klass->rank; i++)
 			{
 				Il2CppArrayBounds& bound = bounds[i];
-				int32_t idx = (int32_t)indexs[i] - bound.lower_bound;
-				if (idx >= 0 && idx < bound.length)
+				il2cpp_array_size_t idx = (il2cpp_array_size_t)(indexs[i].i32 - bound.lower_bound);
+				if (idx < bound.length)
 				{
 					totalIdx = totalIdx * bound.length + idx;
 				}
@@ -527,22 +524,24 @@ if (ARR->max_length <= (il2cpp_array_size_t)INDEX) { \
 		}
 	}
 
-	template<typename T> void GetMdArrayElementExpandToStack(Il2CppArray* arr, il2cpp_array_size_t* indexs, void* value)
+	template<typename T> void GetMdArrayElementExpandToStack(Il2CppArray* arr, StackObject* indexs, void* value)
 	{
+		CHECK_NOT_NULL_THROW(arr);
 		*(int32_t*)value = *(T*)GetMdArrayElementAddress(arr, indexs);
 	}
 
-	template<typename T> void GetMdArrayElementCopyToStack(Il2CppArray* arr, il2cpp_array_size_t* indexs, void* value)
+	template<typename T> void GetMdArrayElementCopyToStack(Il2CppArray* arr, StackObject* indexs, void* value)
 	{
+		CHECK_NOT_NULL_THROW(arr);
 		*(T*)value = *(T*)GetMdArrayElementAddress(arr, indexs);
 	}
 
-	inline void GetMdArrayElementBySize(Il2CppArray* arr, il2cpp_array_size_t* indexs, void* value)
+	inline void GetMdArrayElementBySize(Il2CppArray* arr, StackObject* indexs, void* value)
 	{
 		CopyBySize(value, GetMdArrayElementAddress(arr, indexs), arr->klass->element_size);
 	}
 
-	inline void SetMdArrayElement(Il2CppArray* arr, il2cpp_array_size_t* indexs, void* value)
+	inline void SetMdArrayElement(Il2CppArray* arr, StackObject* indexs, void* value)
 	{
 		CopyBySize(GetMdArrayElementAddress(arr, indexs), value, arr->klass->element_size);
 	}
@@ -995,38 +994,43 @@ else\
 
 #pragma region exception
 
-#define PUSH_EXCEPTION_FLOW_INFO() \
-	if (frame->curExFlowInfo.exFlowType == ExceptionFlowType::None) {\
-	} else if (frame->prevExFlowInfo.exFlowType == ExceptionFlowType::None) {\
-		frame->prevExFlowInfo = frame->curExFlowInfo;\
-	} else {\
-		if (!frame->exHandleStack) \
-		{ \
-			frame->exHandleStack = new (IL2CPP_MALLOC(sizeof(std::vector<ExceptionFlowInfo>))) std::vector<ExceptionFlowInfo>(); \
-		} \
-		frame->exHandleStack->push_back(frame->prevExFlowInfo); \
-		frame->prevExFlowInfo = frame->curExFlowInfo;\
+void PushExceptionFlowInfo(InterpFrame* frame, const ExceptionFlowInfo& newExFlowInfo)
+{
+	if (frame->curExFlowInfo.exFlowType == ExceptionFlowType::None)
+	{
+
 	}
-
-#define POP_PREV_EXCEPTION_FLOW_INFO() {\
-	if (frame->exHandleStack && !frame->exHandleStack->empty())	{\
-		frame->prevExFlowInfo = *frame->exHandleStack->rbegin();\
-		frame->exHandleStack->pop_back();\
-	} else {\
-		frame->prevExFlowInfo.exFlowType = ExceptionFlowType::None;\
-	}\
+	else if (frame->prevExFlowInfo.exFlowType == ExceptionFlowType::None)
+	{
+		frame->prevExFlowInfo = frame->curExFlowInfo;
+	}
+	else
+	{
+		if (!frame->exHandleStack)
+		{
+			frame->exHandleStack = new (IL2CPP_MALLOC(sizeof(std::vector<ExceptionFlowInfo>))) std::vector<ExceptionFlowInfo>();
+		}
+		frame->exHandleStack->push_back(frame->prevExFlowInfo);
+		frame->prevExFlowInfo = frame->curExFlowInfo;
+	}
+	frame->curExFlowInfo = newExFlowInfo;
 }
 
-#define PREPARE_EXCEPTION(_ex_)    \
-	PUSH_EXCEPTION_FLOW_INFO(); \
-	frame->curExFlowInfo = {ExceptionFlowType::Exception, (int32_t)(ip - ipBase), _ex_, 0, 0};
-
-
-#define THROW_EX(_ex_) { Il2CppException* ex = _ex_; CHECK_NOT_NULL_THROW(ex);   il2cpp::vm::Exception::Raise(ex, const_cast<MethodInfo*>(imi->method));}
-#define RETHROW_EX() { \
-	IL2CPP_ASSERT(frame->curExFlowInfo.exFlowType == ExceptionFlowType::Exception); \
-	il2cpp::vm::Exception::Raise(frame->curExFlowInfo.ex, const_cast<MethodInfo*>(imi->method)); \
+void PopPrevExceptionFlowInfo(InterpFrame* frame)
+{
+	if (frame->exHandleStack && !frame->exHandleStack->empty())
+	{
+		frame->prevExFlowInfo = *frame->exHandleStack->rbegin();
+		frame->exHandleStack->pop_back();
+	}
+	else
+	{
+		frame->prevExFlowInfo.exFlowType = ExceptionFlowType::None;
+	}
 }
+
+#define PREPARE_EXCEPTION(_ex_, _firstHanlderIndex_)  PushExceptionFlowInfo(frame, {ExceptionFlowType::Exception, (int32_t)(ip - ipBase), _ex_, _firstHanlderIndex_, 0});
+
 
 #define FIND_NEXT_EX_HANDLER_OR_UNWIND() \
 while (true) \
@@ -1037,13 +1041,17 @@ while (true) \
 	int32_t exClauseNum = (int32_t)imi->exClauses.size(); \
 	for (; efi.nextExClauseIndex < exClauseNum; ) \
 	{ \
-		InterpExceptionClause* iec = imi->exClauses[efi.nextExClauseIndex++]; \
-		if (frame->prevExFlowInfo.exFlowType != ExceptionFlowType::None && efi.nextExClauseIndex >= frame->prevExFlowInfo.nextExClauseIndex) {\
+		while (frame->prevExFlowInfo.exFlowType != ExceptionFlowType::None && efi.nextExClauseIndex >= frame->prevExFlowInfo.nextExClauseIndex) {\
 			InterpExceptionClause* prevIec = imi->exClauses[frame->prevExFlowInfo.nextExClauseIndex - 1]; \
-			if (prevIec->handlerBeginOffset > efi.throwOffset || prevIec->handlerEndOffset <= efi.throwOffset) { \
-				POP_PREV_EXCEPTION_FLOW_INFO();\
+			if (!(prevIec->handlerBeginOffset <= efi.throwOffset && efi.throwOffset < prevIec->handlerEndOffset)) { \
+				PopPrevExceptionFlowInfo(frame);\
+			} \
+			else \
+			{ \
+				break; \
 			} \
 		}\
+		InterpExceptionClause* iec = imi->exClauses[efi.nextExClauseIndex++]; \
 		if (iec->tryBeginOffset <= efi.throwOffset && efi.throwOffset < iec->tryEndOffset) \
 		{ \
 			switch (iec->flags) \
@@ -1055,6 +1063,7 @@ while (true) \
 			ip = ipBase + iec->handlerBeginOffset; \
 			StackObject* exObj = localVarBase + imi->evalStackBaseOffset; \
 			exObj->obj = efi.ex; \
+			efi.exFlowType = ExceptionFlowType::Catch;\
 			goto LoopStart; \
 			} \
 			break; \
@@ -1078,7 +1087,7 @@ while (true) \
 			} \
 			default: \
 			{ \
-			IL2CPP_ASSERT(false); \
+				RaiseHuatuoExecutionEngineException(""); \
 			} \
 			} \
 		} \
@@ -1087,7 +1096,7 @@ while (true) \
 	if (frame) \
 	{ \
 		LOAD_PREV_FRAME(); \
-		PREPARE_EXCEPTION(efi.ex); \
+		PREPARE_EXCEPTION(efi.ex, 0); \
 	}\
 	else \
 	{ \
@@ -1097,6 +1106,32 @@ while (true) \
 }
 
 
+#define THROW_EX(_ex_, _firstHandlerIndex_) { \
+	Il2CppException* ex = _ex_; \
+	CHECK_NOT_NULL_THROW(ex); \
+	il2cpp::vm::Exception::Raise(ex, const_cast<MethodInfo*>(imi->method)); \
+	PREPARE_EXCEPTION(ex, _firstHandlerIndex_); \
+	FIND_NEXT_EX_HANDLER_OR_UNWIND(); \
+}
+#define RETHROW_EX() { \
+	IL2CPP_ASSERT(frame->curExFlowInfo.exFlowType == ExceptionFlowType::Catch); \
+	il2cpp::vm::Exception::Raise(frame->curExFlowInfo.ex, const_cast<MethodInfo*>(imi->method)); \
+}
+
+#define POP_CATCH_HANDLERS(leaveTarget)\
+{ \
+	while (frame->prevExFlowInfo.exFlowType == ExceptionFlowType::Catch) { \
+			InterpExceptionClause* prevIec = imi->exClauses[frame->prevExFlowInfo.nextExClauseIndex - 1]; \
+			if (!(prevIec->handlerBeginOffset <= leaveTarget && leaveTarget < prevIec->handlerEndOffset)) {	\
+					PopPrevExceptionFlowInfo(frame); \
+			} \
+			else \
+			{ \
+				break; \
+			} \
+	}\
+}
+
 #define CONTINUE_NEXT_FINALLY() { \
 ExceptionFlowInfo& efi = frame->curExFlowInfo; \
 IL2CPP_ASSERT(efi.exFlowType == ExceptionFlowType::Leave); \
@@ -1104,12 +1139,6 @@ int32_t exClauseNum = (int32_t)imi->exClauses.size(); \
 for (; efi.nextExClauseIndex < exClauseNum; ) \
 { \
 	InterpExceptionClause* iec = imi->exClauses[efi.nextExClauseIndex++]; \
-	if (frame->prevExFlowInfo.exFlowType != ExceptionFlowType::None && efi.nextExClauseIndex >= frame->prevExFlowInfo.nextExClauseIndex) {\
-		InterpExceptionClause* prevIec = imi->exClauses[frame->prevExFlowInfo.nextExClauseIndex - 1]; \
-		if (prevIec->handlerBeginOffset > efi.throwOffset || prevIec->handlerEndOffset <= efi.throwOffset) { \
-			POP_PREV_EXCEPTION_FLOW_INFO();\
-		} \
-	}\
 	if (iec->tryBeginOffset <= efi.throwOffset && efi.throwOffset < iec->tryEndOffset) \
 	{ \
 		if (iec->tryBeginOffset <= efi.leaveTarget && efi.leaveTarget < iec->tryEndOffset) \
@@ -1131,7 +1160,7 @@ for (; efi.nextExClauseIndex < exClauseNum; ) \
 		} \
 		default: \
 		{ \
-			IL2CPP_ASSERT(false); \
+			RaiseHuatuoExecutionEngineException(""); \
 		} \
 		} \
 	} \
@@ -1139,22 +1168,33 @@ for (; efi.nextExClauseIndex < exClauseNum; ) \
 ip = ipBase + efi.leaveTarget; \
 if (frame->prevExFlowInfo.exFlowType != ExceptionFlowType::None) {\
 	frame->curExFlowInfo = frame->prevExFlowInfo;\
-	POP_PREV_EXCEPTION_FLOW_INFO(); \
+	PopPrevExceptionFlowInfo(frame); \
 } else { \
 	frame->curExFlowInfo.exFlowType = ExceptionFlowType::None; \
 }\
 }
 
-#define LEAVE_EX(target)  { \
-	PUSH_EXCEPTION_FLOW_INFO(); \
-	frame->curExFlowInfo = {ExceptionFlowType::Leave, (int32_t)(ip - ipBase), nullptr, 0, target}; \
-	CONTINUE_NEXT_FINALLY(); \
+#define LEAVE_EX(target, firstHandlerIndex)  { \
+	PushExceptionFlowInfo(frame, {ExceptionFlowType::Leave, (int32_t)(ip - ipBase), nullptr, firstHandlerIndex + 1, target}); \
+	InterpExceptionClause* iec = imi->exClauses[firstHandlerIndex]; \
+	POP_CATCH_HANDLERS(target); \
+	ip = ipBase + iec->handlerBeginOffset; \
+}
+
+#define LEAVE_EX_DIRECTLY(target)  { \
+	POP_CATCH_HANDLERS(target); \
+	ip = ipBase + target; \
 }
 
 #define ENDFILTER_EX(value) \
+IL2CPP_ASSERT(frame->curExFlowInfo.exFlowType == ExceptionFlowType::Exception); \
 if(!(value)) \
 {\
     FIND_NEXT_EX_HANDLER_OR_UNWIND();\
+} \
+else \
+{ \
+	frame->curExFlowInfo.exFlowType = ExceptionFlowType::Catch;\
 }
 
 #define ENDFINALLY_EX() \
@@ -1473,326 +1513,6 @@ else \
 
 #pragma region CONVERT
 		//!!!{{CONVERT
-				case HiOpcodeEnum::ConvertVarVar_i1_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int8_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int16_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(float*)(localVarBase + __dst)) = (float)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i1_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(double*)(localVarBase + __dst)) = (double)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int8_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int16_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(float*)(localVarBase + __dst)) = (float)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u1_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(double*)(localVarBase + __dst)) = (double)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int8_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int16_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(float*)(localVarBase + __dst)) = (float)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_i2_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(double*)(localVarBase + __dst)) = (double)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int8_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int16_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(float*)(localVarBase + __dst)) = (float)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertVarVar_u2_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(double*)(localVarBase + __dst)) = (double)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
 				case HiOpcodeEnum::ConvertVarVar_i4_i1:
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
@@ -1805,7 +1525,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(int32_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)(uint32_t)((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1821,7 +1541,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(int32_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)(uint32_t)((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1837,7 +1557,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(int32_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)(uint32_t)((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1853,7 +1573,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(int32_t*)(localVarBase + __src)));
+					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)(uint32_t)((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1965,7 +1685,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)((*(int64_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint8_t)(uint64_t)((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1981,7 +1701,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)((*(int64_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint16_t)(uint64_t)((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -1997,7 +1717,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)((*(int64_t*)(localVarBase + __src)));
+					(*(int32_t*)(localVarBase + __dst)) = (uint32_t)(uint64_t)((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -2013,7 +1733,7 @@ else \
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)((*(int64_t*)(localVarBase + __src)));
+					(*(int64_t*)(localVarBase + __dst)) = (uint64_t)(uint64_t)((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -2273,486 +1993,6 @@ else \
 				    ip += 8;
 				    continue;
 				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)((*(int8_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int8_t*)(localVarBase + __dst)) = (int8_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)((*(int8_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(int16_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int16_t*)(localVarBase + __dst)) = (int16_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(uint16_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(int32_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(uint32_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(int64_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(uint64_t)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(float)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(float*)(localVarBase + __dst)) = (float)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i1_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)(double)((*(int8_t*)(localVarBase + __src))) != (*(int8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(double*)(localVarBase + __dst)) = (double)((*(int8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)((*(uint8_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int8_t*)(localVarBase + __dst)) = (int8_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int8_t)((*(uint8_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(int16_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int16_t*)(localVarBase + __dst)) = (int16_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(uint16_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(int32_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(uint32_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(int64_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(uint64_t)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(float)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(float*)(localVarBase + __dst)) = (float)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u1_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint8_t)(double)((*(uint8_t*)(localVarBase + __src))) != (*(uint8_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(double*)(localVarBase + __dst)) = (double)((*(uint8_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(int8_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int8_t*)(localVarBase + __dst)) = (int8_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(uint8_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)((*(int16_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int16_t*)(localVarBase + __dst)) = (int16_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)((*(int16_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(int32_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(uint32_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(int64_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(uint64_t)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(float)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(float*)(localVarBase + __dst)) = (float)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_i2_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)(double)((*(int16_t*)(localVarBase + __src))) != (*(int16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(double*)(localVarBase + __dst)) = (double)((*(int16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_i1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(int8_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int8_t*)(localVarBase + __dst)) = (int8_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_u1:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(uint8_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_i2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)((*(uint16_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int16_t*)(localVarBase + __dst)) = (int16_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_u2:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((int16_t)((*(uint16_t*)(localVarBase + __src))) < 0)
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_i4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(int32_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int32_t*)(localVarBase + __dst)) = (int32_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_u4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(uint32_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_i8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(int64_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(int64_t*)(localVarBase + __dst)) = (int64_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_u8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(uint64_t)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_f4:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(float)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(float*)(localVarBase + __dst)) = (float)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
-				case HiOpcodeEnum::ConvertOverflowVarVar_u2_f8:
-				{
-					uint16_t __dst = *(uint16_t*)(ip + 2);
-					uint16_t __src = *(uint16_t*)(ip + 4);
-				    if ((uint16_t)(double)((*(uint16_t*)(localVarBase + __src))) != (*(uint16_t*)(localVarBase + __src)))
-				    {
-				        il2cpp::vm::Exception::RaiseOverflowException();
-				    }
-				    (*(double*)(localVarBase + __dst)) = (double)((*(uint16_t*)(localVarBase + __src)));
-				    ip += 8;
-				    continue;
-				}
 				case HiOpcodeEnum::ConvertOverflowVarVar_i4_i1:
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
@@ -2773,7 +2013,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(int32_t*)(localVarBase + __src)));
+				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)uint32_t((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -2797,7 +2037,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(int32_t*)(localVarBase + __src)));
+				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)uint32_t((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -2845,7 +2085,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)((*(int32_t*)(localVarBase + __src)));
+				    (*(uint64_t*)(localVarBase + __dst)) = (uint64_t)uint32_t((*(int32_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -3013,7 +2253,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)((*(int64_t*)(localVarBase + __src)));
+				    (*(uint8_t*)(localVarBase + __dst)) = (uint8_t)uint64_t((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -3037,7 +2277,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)((*(int64_t*)(localVarBase + __src)));
+				    (*(uint16_t*)(localVarBase + __dst)) = (uint16_t)uint64_t((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -3061,7 +2301,7 @@ else \
 				    {
 				        il2cpp::vm::Exception::RaiseOverflowException();
 				    }
-				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)((*(int64_t*)(localVarBase + __src)));
+				    (*(uint32_t*)(localVarBase + __dst)) = (uint32_t)uint64_t((*(int64_t*)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
@@ -7799,7 +7039,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					Il2CppClass* __klass = ((Il2CppClass*)imi->resolveDatas[*(uint32_t*)(ip + 8)]);
-				    (*(Il2CppArray**)(localVarBase + __arr)) =  NewMdArray(__klass, (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), nullptr);
+				    (*(Il2CppArray**)(localVarBase + __arr)) =  NewMdArray(__klass, (StackObject*)(void*)(localVarBase + __lengthIdxs), nullptr);
 				    ip += 16;
 				    continue;
 				}
@@ -7809,7 +7049,7 @@ else \
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __lowerBoundIdxs = *(uint16_t*)(ip + 6);
 					Il2CppClass* __klass = ((Il2CppClass*)imi->resolveDatas[*(uint32_t*)(ip + 8)]);
-				    (*(Il2CppArray**)(localVarBase + __arr)) =  NewMdArray(__klass, (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (il2cpp_array_size_t*)(void*)(localVarBase + __lowerBoundIdxs));
+				    (*(Il2CppArray**)(localVarBase + __arr)) =  NewMdArray(__klass, (StackObject*)(void*)(localVarBase + __lengthIdxs), (StackObject*)(void*)(localVarBase + __lowerBoundIdxs));
 				    ip += 16;
 				    continue;
 				}
@@ -7818,7 +7058,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementExpandToStack<int8_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementExpandToStack<int8_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7827,7 +7067,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementExpandToStack<uint8_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementExpandToStack<uint8_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7836,7 +7076,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementExpandToStack<int16_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementExpandToStack<int16_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7845,7 +7085,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementExpandToStack<uint16_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementExpandToStack<uint16_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7854,7 +7094,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementCopyToStack<int32_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementCopyToStack<int32_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7863,7 +7103,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementCopyToStack<uint32_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementCopyToStack<uint32_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7872,7 +7112,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementCopyToStack<int64_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementCopyToStack<int64_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7881,7 +7121,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementCopyToStack<uint64_t>((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementCopyToStack<uint64_t>((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7890,7 +7130,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    GetMdArrayElementBySize((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    GetMdArrayElementBySize((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7899,7 +7139,7 @@ else \
 					uint16_t __addr = *(uint16_t*)(ip + 2);
 					uint16_t __arr = *(uint16_t*)(ip + 4);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 6);
-				    (*(void**)(localVarBase + __addr)) = GetMdArrayElementAddress((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs));
+				    (*(void**)(localVarBase + __addr)) = GetMdArrayElementAddress((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs));
 				    ip += 8;
 				    continue;
 				}
@@ -7908,7 +7148,7 @@ else \
 					uint16_t __arr = *(uint16_t*)(ip + 2);
 					uint16_t __lengthIdxs = *(uint16_t*)(ip + 4);
 					uint16_t __value = *(uint16_t*)(ip + 6);
-				    SetMdArrayElement((*(Il2CppArray**)(localVarBase + __arr)), (il2cpp_array_size_t*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
+				    SetMdArrayElement((*(Il2CppArray**)(localVarBase + __arr)), (StackObject*)(void*)(localVarBase + __lengthIdxs), (void*)(localVarBase + __value));
 				    ip += 8;
 				    continue;
 				}
@@ -7921,7 +7161,8 @@ else \
 				case HiOpcodeEnum::ThrowEx:
 				{
 					uint16_t __exceptionObj = *(uint16_t*)(ip + 2);
-					THROW_EX((Il2CppException*)(*(Il2CppObject**)(localVarBase + __exceptionObj)));
+					uint16_t __firstHandlerIndex = *(uint16_t*)(ip + 4);
+					THROW_EX((Il2CppException*)(*(Il2CppObject**)(localVarBase + __exceptionObj)), __firstHandlerIndex);
 				    continue;
 				}
 				case HiOpcodeEnum::RethrowEx:
@@ -7931,8 +7172,15 @@ else \
 				}
 				case HiOpcodeEnum::LeaveEx:
 				{
-					int32_t __offset = *(int32_t*)(ip + 4);
-					LEAVE_EX(__offset);
+					int32_t __target = *(int32_t*)(ip + 4);
+					uint16_t __firstHandlerIndex = *(uint16_t*)(ip + 2);
+					LEAVE_EX(__target, __firstHandlerIndex);
+				    continue;
+				}
+				case HiOpcodeEnum::LeaveEx_Directly:
+				{
+					int32_t __target = *(int32_t*)(ip + 4);
+					LEAVE_EX_DIRECTLY(__target);
 				    continue;
 				}
 				case HiOpcodeEnum::EndFilterEx:
@@ -8134,7 +7382,7 @@ else \
 				//!!!}}INSTRINCT
 #pragma endregion
 				default:
-					IL2CPP_ASSERT(false);
+					RaiseHuatuoExecutionEngineException("");
 					break;
 				}
 			}
@@ -8142,7 +7390,7 @@ else \
 		}
 		catch (Il2CppExceptionWrapper ex)
 		{
-			PREPARE_EXCEPTION(ex.ex);
+			PREPARE_EXCEPTION(ex.ex, 0);
 			FIND_NEXT_EX_HANDLER_OR_UNWIND();
 		}
 		return;

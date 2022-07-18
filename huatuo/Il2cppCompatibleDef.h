@@ -25,22 +25,38 @@
 
 #if IL2CPP_TARGET_ARM64
 #define HUATUO_TARGET_ARM64 1
-#define HUATUO_TARGET_ARM_ANY 1
 #elif IL2CPP_TARGET_ARMV7
 #define HUATUO_TARGET_ARMV7 1
-#define HUATUO_TARGET_ARM_ANY 1
-#else
+#elif IL2CPP_TARGET_WINDOWS
+#if PLATFORM_ARCH_64
 #define HUATUO_TARGET_X64 1
-#define HUATUO_TARGET_ARM_ANY 0
+#else
+#define HUATUO_TARGET_X86 1
+#endif
+#elif IL2CPP_TARGET_JAVASCRIPT
+#define HUATUO_TARGET_JAVASCRIPT 1
+#else
+#error "not support platform"
 #endif
 
 #if	PLATFORM_ARCH_64
 #define HUATUO_ARCH_64 1
+#if IL2CPP_TARGET_ARM64
+#define ARM64_ABI 1
+#define GENERAL_ABI_64 0
+#else
+#define GENERAL_ABI_64 1
+#endif
+#define GENERAL_ABI_32 0
 #else
 #define HUATUO_ARCH_64 0
+#define GENERAL_ABI_64 0
+#define GENERAL_ABI_32 1
 #endif
 
-constexpr int PTR_SIZE = sizeof(void*);
+constexpr int PTR_SIZE = IL2CPP_SIZEOF_VOID_P;
+
+#define SUPPORT_MEMORY_NOT_ALIGMENT_ACCESS  HUATUO_ARCH_64
 
 #ifndef ENABLE_PLACEHOLDER_DLL
 #define ENABLE_PLACEHOLDER_DLL 1

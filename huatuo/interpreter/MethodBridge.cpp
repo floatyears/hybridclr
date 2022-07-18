@@ -17,36 +17,42 @@ namespace huatuo
 	{
 		ArgDesc GetValueTypeArgDescBySize(uint32_t size)
 		{
-#if HUATUO_TARGET_ARM64
+#if ARM64_ABI
 			if (size <= 8)
 			{
 				return { LocationDataType::U8, 1 };
 			}
 			else if (size <= 16)
 			{
-				return { LocationDataType::U16, 2 };
+				return { LocationDataType::S_16, 2 };
+			}
+			else
+			{
+				return { LocationDataType::SR, (uint32_t)metadata::GetStackSizeByByteSize(size) };
+			}
+#elif GENERAL_ABI_64 || GENERAL_ABI_32
+			if (size <= 8)
+			{
+				return { LocationDataType::U8, 1 };
+			}
+			else if (size <= 16)
+			{
+				return { LocationDataType::S_16, 2 };
+			}
+			else if (size <= 24)
+			{
+				return { LocationDataType::S_24, 3 };
+			}
+			else if (size <= 32)
+			{
+				return { LocationDataType::S_32, 4 };
 			}
 			else
 			{
 				return { LocationDataType::S_N, (uint32_t)metadata::GetStackSizeByByteSize(size) };
 			}
-#elif HUATUO_TARGET_ARMV7
-            return { LocationDataType::S_N, (uint32_t)metadata::GetStackSizeByByteSize(size) };
 #else
-			switch (size)
-			{
-			case 1:
-			case 2:
-			case 4:
-			case 8: return { LocationDataType::U8, 1 };
-			case 12: return { LocationDataType::S_12, 2 };
-			case 16: return { LocationDataType::S_16, 2 };
-			case 20: return { LocationDataType::S_20, 3 };
-			case 24: return { LocationDataType::S_24, 3 };
-			case 28: return { LocationDataType::S_28, 4 };
-			case 32: return { LocationDataType::S_32, 4 };
-			default: return { LocationDataType::S_N, (uint32_t)metadata::GetStackSizeByByteSize(size) };
-			}
+#error "not support ABI"
 #endif
 		}
 
@@ -144,19 +150,6 @@ namespace huatuo
 					++dstOffset;
 					break;
 				}
-				case LocationDataType::U16:
-				{
-					Copy16(dst, *(void**)src);
-					dstOffset += 2;
-					break;
-				}
-				case LocationDataType::S_12:
-				{
-					// when size > 8, arg is ref to struct
-					Copy12(dst, src->ptr);
-					dstOffset += 2;
-					break;
-				}
 				case LocationDataType::S_16:
 				{
 					// when size > 8, arg is ref to struct
@@ -164,22 +157,10 @@ namespace huatuo
 					dstOffset += 2;
 					break;
 				}
-				case LocationDataType::S_20:
-				{
-					Copy20(dst, src->ptr);
-					dstOffset += 3;
-					break;
-				}
 				case LocationDataType::S_24:
 				{
 					Copy24(dst, src->ptr);
 					dstOffset += 3;
-					break;
-				}
-				case LocationDataType::S_28:
-				{
-					Copy28(dst, src->ptr);
-					dstOffset += 4;
 					break;
 				}
 				case LocationDataType::S_32:
@@ -190,7 +171,13 @@ namespace huatuo
 				}
 				case LocationDataType::S_N:
 				{
-					std::memcpy(dst, src->ptr, arg.stackObjectSize * sizeof(StackObject));
+					CopyStackObject(dst, src->ptr, arg.stackObjectSize);
+					dstOffset += arg.stackObjectSize;
+					break;
+				}
+				case LocationDataType::SR:
+				{
+					CopyStackObject(dst, src->ptr, arg.stackObjectSize);
 					dstOffset += arg.stackObjectSize;
 					break;
 				}
@@ -217,7 +204,7 @@ namespace huatuo
 		{
 			if (type->byref)
 			{
-				IL2CPP_ASSERT(false);
+				RaiseHuatuoExecutionEngineException("");
 				return nullptr;
 			}
 			Il2CppClass* klass = il2cpp::vm::Class::FromIl2CppType(type);
@@ -342,7 +329,7 @@ namespace huatuo
 			}
 			else
 			{
-				IL2CPP_ASSERT(false);
+				RaiseHuatuoExecutionEngineException("");
 			}
 		}
 
@@ -361,11 +348,12 @@ namespace huatuo
 			}
 			else
 			{
-				IL2CPP_ASSERT(false);
+				RaiseHuatuoExecutionEngineException("");
 			}
 		}
-		static void AppendValueTypeSignatureByAligmentAndSize(int32_t typeSize, uint8_t aligment, char* sigBuf, size_t bufferSize, size_t& pos)
+		static void AppendValueTypeSignatureByAligmentAndSize(int32_t typeSize, uint8_t aligment, bool returnValue, char* sigBuf, size_t bufferSize, size_t& pos)
 		{
+#if GENERAL_ABI_32 || GENERAL_ABI_64
 			switch (aligment)
 			{
 			case 0:
@@ -395,12 +383,32 @@ namespace huatuo
 				RaiseHuatuoExecutionEngineException(errMsg);
 			}
 			}
+#elif ARM64_ABI
+			if (typeSize <= 8)
+			{
+				AppendString(sigBuf, bufferSize, pos, "i8");
+			}
+			else if (typeSize <= 16)
+			{
+				AppendString(sigBuf, bufferSize, pos, "i16");
+			}
+			else if (!returnValue)
+			{
+				AppendString(sigBuf, bufferSize, pos, "sr");
+			}
+			else
+			{
+				pos += std::sprintf(sigBuf + pos, "S%d", typeSize);
+			}
+#else
+#error "not support ABI"
+#endif
 		}
 
 		static void AppendValueTypeSignature(Il2CppClass* klass, bool returnType, char* sigBuf, size_t bufferSize, size_t& pos)
 		{
 			int32_t typeSize = il2cpp::vm::Class::GetValueSize(klass, nullptr);
-#if HUATUO_TARGET_ARM64
+#if GENERAL_ABI_64 || ARM64_ABI
 			HFATypeInfo typeInfo = {};
 			if (ComputeHFATypeInfo(klass, typeInfo))
 			{
@@ -449,51 +457,13 @@ namespace huatuo
 				}
 			}
 			// FIXME HSV
-
-			if (typeSize <= 8)
-			{
-				AppendString(sigBuf, bufferSize, pos, "i8");
-			}
-			else if (typeSize <= 16)
-			{
-				AppendString(sigBuf, bufferSize, pos, "s2");
-			}
-			else
-			{
-				if (returnType)
-				{
-					AppendValueTypeSignatureByAligmentAndSize(typeSize, klass->naturalAligment, sigBuf, bufferSize, pos);
-				}
-				else
-				{
-					AppendString(sigBuf, bufferSize, pos, "sr");
-				}
-			}
-#elif HUATUO_TARGET_ARMV7
-			AppendValueTypeSignatureByAligmentAndSize(typeSize, klass->naturalAligment, sigBuf, bufferSize, pos);
+			uint8_t actualAligment = 1;
+			AppendValueTypeSignatureByAligmentAndSize(typeSize, actualAligment, returnType, sigBuf, bufferSize, pos);
+#elif GENERAL_ABI_32
+			uint8_t actualAligment = klass->naturalAligment <= 4 ? 1 : 8;
+			AppendValueTypeSignatureByAligmentAndSize(typeSize, actualAligment, returnType, sigBuf, bufferSize, pos);
 #else
-			switch (typeSize)
-			{
-			case 1:
-			case 2:
-			case 4:
-			case 8:
-			{
-				AppendString(sigBuf, bufferSize, pos, "i8");
-				break;
-			}
-			default:
-			{
-				if (returnType)
-				{
-					AppendValueTypeSignatureByAligmentAndSize(typeSize, klass->naturalAligment, sigBuf, bufferSize, pos);
-				}
-				else
-				{
-					AppendString(sigBuf, bufferSize, pos, "sr");
-				}
-			}
-			}
+#error "not support platform"
 #endif
 		}
 
@@ -540,7 +510,7 @@ namespace huatuo
 			switch (type->type)
 			{
 			case IL2CPP_TYPE_VOID: AppendString(sigBuf, bufferSize, pos, "v"); break;
-#if HUATUO_TARGET_ARM_ANY
+#if IL2CPP_TARGET_ARM64 || HUATUO_TARGET_X64 || IL2CPP_TARGET_ARMV7 || HUATUO_TARGET_X86 || IL2CPP_TARGET_JAVASCRIPT
 			case IL2CPP_TYPE_BOOLEAN:
 			case IL2CPP_TYPE_I1:
 			case IL2CPP_TYPE_U1: AppendString(sigBuf, bufferSize, pos, "i1"); break;
@@ -550,8 +520,10 @@ namespace huatuo
 			case IL2CPP_TYPE_I4:
 			case IL2CPP_TYPE_U4: AppendString(sigBuf, bufferSize, pos, "i4"); break;
 			case IL2CPP_TYPE_R4: AppendString(sigBuf, bufferSize, pos, "r4"); break;
-#else
+#elif HUATUO_TARGET_X64_DEPRECATED
 			case IL2CPP_TYPE_R4:
+#else
+#error "not suppport platform"
 #endif
 			case IL2CPP_TYPE_R8: AppendString(sigBuf, bufferSize, pos, "r8"); break;
 			case IL2CPP_TYPE_I8:
@@ -593,7 +565,14 @@ namespace huatuo
 					}
 					Il2CppClass* klass = il2cpp::vm::Class::FromIl2CppType(type);
 					IL2CPP_ASSERT(IS_CLASS_VALUE_TYPE(klass));
-					AppendValueTypeSignature(klass, returnType, sigBuf, bufferSize, pos);
+					if (klass->enumtype)
+					{
+						AppendSignature(&klass->castClass->byval_arg, returnType, sigBuf, bufferSize, pos);
+					}
+					else
+					{
+						AppendValueTypeSignature(klass, returnType, sigBuf, bufferSize, pos);
+					}
 				}
 				break;
 			}

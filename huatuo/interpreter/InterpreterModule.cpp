@@ -96,7 +96,9 @@ namespace interpreter
 
 	static void* NotSupportInvoke(Il2CppMethodPointer, const MethodInfo* method, void*, void**)
 	{
-		TEMP_FORMAT(errMsg, "Invoke method missing. %s.%s::%s", method->klass->namespaze, method->klass->name, method->name);
+		char sigName[1000];
+		ComputeSignature(method, false, sigName, sizeof(sigName) - 1);
+		TEMP_FORMAT(errMsg, "Invoke method missing. sinature:%s %s.%s::%s", sigName, method->klass->namespaze, method->klass->name, method->name);
 		il2cpp::vm::Exception::Raise(il2cpp::vm::Exception::GetExecutionEngineException(errMsg));
 		return nullptr;
 	}
@@ -226,7 +228,8 @@ namespace interpreter
 		}
 
 		metadata::Image* image = metadata::IsInterpreterMethod(methodInfo) ? huatuo::metadata::MetadataModule::GetImage(methodInfo->klass)
-			: (metadata::Image*)huatuo::metadata::AOTHomologousImage::FindImageByAssembly(methodInfo->klass->image->assembly);
+			: (metadata::Image*)huatuo::metadata::AOTHomologousImage::FindImageByAssembly(
+				methodInfo->klass->rank ? il2cpp_defaults.corlib->assembly : methodInfo->klass->image->assembly);
 		IL2CPP_ASSERT(image);
 
 		metadata::MethodBody* methodBody = image->GetMethodBody(methodInfo);
